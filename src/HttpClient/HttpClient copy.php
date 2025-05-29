@@ -20,7 +20,7 @@ use Psr\Http\Message\StreamFactoryInterface;
  * $responses = $client->sendRequests[$r1, $2];
  * foreach $responses as $response...
  */
-class HttpClient implements ClientInterface
+class HttpClientC implements ClientInterface
 {
 
     private array $extraOptions = [];

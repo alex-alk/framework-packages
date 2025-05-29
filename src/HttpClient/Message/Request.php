@@ -2,29 +2,30 @@
 
 namespace Framework\HttpClient\Message;
 
+use Fig\Http\Message\RequestMethodInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
-class Request implements RequestInterface
+class Request implements RequestInterface, RequestMethodInterface
 {
-    private string         $method;
-    private UriInterface   $uri;
-    private array          $headers = [];
+    private string $method;
+    private UriInterface $uri;
+    private array $headers = [];
     private StreamInterface $body;
-    private string         $protocol = '1.1';
-    private ?string        $target   = null;
+    private string $protocol = '1.1';
+    private ?string $target   = null;
 
     public function __construct(
         string $method,
-        UriInterface $uri,
+        string $url,
+        string $body = '',
         array $headers = [],
-        ?StreamInterface $body = null
     ) {
-        $this->method  = strtoupper($method);
-        $this->uri     = $uri;
+        $this->method = strtoupper($method);
+        $this->uri = new Uri($url);
+        $this->body = new Stream($body);
         $this->headers = $this->normalizeHeaders($headers);
-        $this->body    = $body ?? new Stream();
     }
 
     private function normalizeHeaders(array $h): array

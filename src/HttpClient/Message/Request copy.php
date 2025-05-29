@@ -2,24 +2,29 @@
 
 namespace Framework\HttpClient\Message;
 
-use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\UriInterface;
 
-class Response implements ResponseInterface
+class RequestC implements RequestInterface
 {
-    private int            $statusCode;
-    private array          $headers      = [];
+    private string         $method;
+    private UriInterface   $uri;
+    private array          $headers = [];
     private StreamInterface $body;
-    private string         $protocol     = '1.1';
+    private string         $protocol = '1.1';
+    private ?string        $target   = null;
 
     public function __construct(
-        string $body = '',
-        int $statusCode = 200,
-        array $headers = []
+        string $method,
+        UriInterface $uri,
+        array $headers = [],
+        ?StreamInterface $body = null
     ) {
-        $this->statusCode   = $statusCode;
-        $this->headers      = $this->normalizeHeaders($headers);
-        $this->body = new Stream($body);
+        $this->method  = strtoupper($method);
+        $this->uri     = $uri;
+        $this->headers = $this->normalizeHeaders($headers);
+        $this->body    = $body ?? new Stream();
     }
 
     private function normalizeHeaders(array $h): array
@@ -31,18 +36,48 @@ class Response implements ResponseInterface
         return $out;
     }
 
-    public function getStatusCode(): int
+    public function getRequestTarget(): string
     {
-        return $this->statusCode;
+        if ($this->target !== null) {
+            return $this->target;
+        }
+        $path = $this->uri->getPath() ?: '/';
+        $q    = $this->uri->getQuery();
+        return $path . ($q !== '' ? '?' . $q : '');
     }
-    public function getReasonPhrase(): string
-    {
-        return '';
-    }
-    public function withStatus($code, $reasonPhrase = ''): self
+
+    public function withRequestTarget($target): self
     {
         $clone = clone $this;
-        $clone->statusCode   = $code;
+        $clone->target = $target;
+        return $clone;
+    }
+
+    public function getMethod(): string
+    {
+        return $this->method;
+    }
+    public function withMethod($method): self
+    {
+        $clone = clone $this;
+        $clone->method = strtoupper($method);
+        return $clone;
+    }
+
+    public function getUri(): UriInterface
+    {
+        return $this->uri;
+    }
+    public function withUri(UriInterface $uri, $preserveHost = false): self
+    {
+        $clone = clone $this;
+        $clone->uri = $uri;
+        if (!$preserveHost) {
+            $host = $uri->getHost();
+            if ($host !== '') {
+                $clone->headers['host'] = [$host . ($uri->getPort() ? ':' . $uri->getPort() : '')];
+            }
+        }
         return $clone;
     }
 
